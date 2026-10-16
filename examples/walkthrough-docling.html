@@ -1,0 +1,367 @@
+<!doctype html>
+<!--
+Compass walkthrough (reference instance)
+Indexed-at: b613414 (docling-project/docling)
+Branch: <branch>
+Generated: <ISO timestamp>
+Depth: newcomer
+Inspired by alexanderop/walkthrough and Amp shareable walkthroughs. Original implementation.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Walkthrough: How Docling converts a document</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css" />
+<style>
+  :root{
+    --bg:#161616; --layer:#262626; --layer2:#393939; --border:#393939;
+    --text:#f4f4f4; --text2:#c6c6c6; --muted:#8d8d8d;
+    --blue:#0f62fe; --blue-l:#4589ff; --blue-ll:#78a9ff; --teal:#08bdba;
+    --sans:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+  header{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .mark{width:10px;height:10px;background:var(--blue);display:inline-block;border-radius:2px}
+  header h1{font-size:16px;font-weight:600;margin:0;letter-spacing:.01em}
+  header .sub{color:var(--muted);font-size:13px}
+  .layout{display:grid;grid-template-columns:1fr 420px;height:calc(100% - 59px)}
+  @media (max-width:900px){.layout{grid-template-columns:1fr;grid-template-rows:55% 45%}}
+  #stage{position:relative;overflow:hidden;background:
+    radial-gradient(circle at 1px 1px, #2a2a2a 1px, transparent 0) 0 0/22px 22px, var(--bg);cursor:grab}
+  #stage.grabbing{cursor:grabbing}
+  #vp{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+  #vp svg{max-width:none!important;height:auto}
+  #crumbs{position:absolute;top:12px;left:14px;z-index:6;display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+    background:rgba(22,22,22,.78);backdrop-filter:blur(4px);padding:6px 10px;border:1px solid var(--border);border-radius:6px}
+  .crumb{background:transparent;border:none;color:var(--blue-ll);font-family:var(--mono);font-size:12px;cursor:pointer;padding:0}
+  .crumb:last-child{color:var(--text2);cursor:default}
+  .sep{color:var(--muted);font-family:var(--mono)}
+  .controls{position:absolute;right:14px;bottom:14px;display:flex;gap:6px;z-index:5}
+  .controls button{width:34px;height:34px;border:1px solid var(--border);background:var(--layer);
+    color:var(--text);font-size:16px;border-radius:4px;cursor:pointer;font-family:var(--mono)}
+  .controls button:hover{background:var(--layer2);border-color:var(--blue-l)}
+  .node{cursor:pointer}
+  .node.has-sub rect,.node.has-sub polygon,.node.has-sub path,.node.has-sub circle{
+    stroke:var(--teal)!important;stroke-width:2.5px!important}
+  .node.wt-active rect,.node.wt-active polygon,.node.wt-active circle,.node.wt-active path{
+    stroke:var(--blue-ll)!important;stroke-width:3px!important;filter:drop-shadow(0 0 6px rgba(120,169,255,.55))}
+  aside{border-left:1px solid var(--border);background:var(--layer);overflow-y:auto;padding:0}
+  @media (max-width:900px){aside{border-left:none;border-top:1px solid var(--border)}}
+  .panel-head{padding:20px 22px 14px;border-bottom:1px solid var(--border)}
+  .panel-head .kicker{color:var(--blue-l);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono)}
+  .panel-head h2{margin:6px 0 0;font-size:19px;font-weight:600}
+  .panel-body{padding:18px 22px 40px}
+  .desc{color:var(--text2);font-size:14px;line-height:1.6;margin:0 0 18px}
+  #p-drill{display:none;margin:0 0 18px;background:var(--blue);border:none;color:#fff;font-family:var(--sans);
+    font-size:13px;font-weight:500;padding:8px 14px;border-radius:4px;cursor:pointer}
+  #p-drill:hover{background:var(--blue-l)}
+  .files{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px}
+  .files span{font-family:var(--mono);font-size:12px;color:var(--blue-ll);background:#1c2a44;
+    border:1px solid #24355a;padding:3px 8px;border-radius:3px}
+  .snip-label{font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 6px}
+  pre{margin:0;border:1px solid var(--border);border-radius:6px;overflow:auto;background:#0e0e0e}
+  pre code{font-family:var(--mono);font-size:12.5px;line-height:1.55;padding:14px;display:block}
+  .nodelist{padding:14px 22px 24px;border-top:1px solid var(--border)}
+  .nodelist .t{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono);margin-bottom:8px}
+  .nodelist button{display:block;width:100%;text-align:left;background:transparent;border:none;color:var(--text2);
+    padding:7px 10px;border-radius:4px;cursor:pointer;font-family:var(--sans);font-size:13px}
+  .nodelist button:hover{background:var(--layer2);color:var(--text)}
+  .nodelist button.active{background:#1c2a44;color:var(--blue-ll)}
+  .err{padding:24px;color:#ffb3b3;font-family:var(--mono);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <span class="mark"></span>
+  <h1>How Docling converts a document</h1>
+  <span class="sub">Click a node to read it. Teal boxes drill into a sub-diagram. Scroll to zoom, drag to pan.</span>
+</header>
+<div class="layout">
+  <div id="stage">
+    <div id="crumbs"></div>
+    <div id="vp"></div>
+    <div class="controls">
+      <button id="zin" title="Zoom in">+</button>
+      <button id="zout" title="Zoom out">&minus;</button>
+      <button id="fit" title="Fit to view">&#9633;</button>
+    </div>
+  </div>
+  <aside>
+    <div class="panel-head">
+      <div class="kicker" id="p-kicker">Walkthrough</div>
+      <h2 id="p-title">Select a node</h2>
+    </div>
+    <div class="panel-body">
+      <p class="desc" id="p-desc">Click any node in the diagram, or pick one from the list below. Boxes outlined in teal contain a subflow: click "Drill into" to open a deeper diagram of just that piece.</p>
+      <button id="p-drill"></button>
+      <div class="files" id="p-files"></div>
+      <div id="p-snipwrap" style="display:none">
+        <div class="snip-label" id="p-sniplabel">Snippet</div>
+        <pre><code id="p-code"></code></pre>
+      </div>
+    </div>
+    <div class="nodelist">
+      <div class="t">Concepts at this level</div>
+      <div id="p-list"></div>
+    </div>
+  </aside>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>
+/* ---- DATA: the only part the agent fills in. A node may carry a `subflow`
+        (its own mermaid + nodes) to add an abstraction layer you drill into. ---- */
+const DATA = {
+  "topic": "How Docling converts a document",
+  "diagramType": "flowchart",
+  "mermaid": "flowchart TD\n  CLI[\"docling convert (CLI)\"] --> CONV[\"DocumentConverter.convert()\"]\n  CONV --> BACK[\"Backend: parse the file\"]\n  BACK --> PIPE[\"Pipeline.execute(): run models\"]\n  PIPE --> RES[\"ConversionResult\"]\n  RES --> EXP[\"Export: Markdown / JSON / HTML\"]\n",
+  "nodes": {
+    "CLI": {
+      "label": "docling convert (CLI)",
+      "files": [
+        "docling/cli/main.py:477"
+      ],
+      "lang": "python",
+      "description": "The command-line entry point. `docling convert <source>` parses your arguments and hands the source to the converter.",
+      "code": "def convert(  # noqa: C901\n    source: Annotated[\n        list[str],\n        typer.Argument("
+    },
+    "CONV": {
+      "label": "DocumentConverter.convert()",
+      "files": [
+        "docling/document_converter.py:361"
+      ],
+      "lang": "python",
+      "description": "The main API. DocumentConverter (class at line 232) picks the right backend and pipeline for the input format and runs a single conversion.",
+      "code": "    def convert(\n        self,\n        source: Union[Path, str, DocumentStream],  # TODO review naming\n        headers: Optional[dict[str, str]] = None,"
+    },
+    "BACK": {
+      "label": "Backend: parse the file",
+      "files": [
+        "docling/backend/abstract_backend.py:85"
+      ],
+      "lang": "python",
+      "description": "A format-specific backend reads the raw file. Declarative backends return a DoclingDocument directly; PDF backends hand pages to the pipeline. One backend per format keeps parsing isolated.",
+      "code": "    def convert(self) -> DoclingDocument:\n        pass"
+    },
+    "PIPE": {
+      "label": "Pipeline.execute(): run models",
+      "files": [
+        "docling/pipeline/base_pipeline.py:68"
+      ],
+      "lang": "python",
+      "description": "For PDFs and images the pipeline runs the AI models over each page: layout, OCR, tables, assembly, reading order. Drill in to see the stages.",
+      "code": "    def execute(self, in_doc: InputDocument, raises_on_error: bool) -> ConversionResult:\n        conv_res = ConversionResult(input=in_doc)\n\n        _log.info(f\"Processing document {in_doc.file.name}\")",
+      "subflow": {
+        "diagramType": "flowchart",
+        "mermaid": "flowchart TD\n  LAY[\"Layout model\"] --> OCR[\"OCR model\"]\n  OCR --> TAB[\"Table-structure model\"]\n  TAB --> ASM[\"Page assembly\"]\n  ASM --> RDO[\"Reading-order model\"]\n",
+        "nodes": {
+          "LAY": {
+            "label": "Layout model",
+            "files": [
+              "docling/models/base_layout_model.py:13"
+            ],
+            "lang": "python",
+            "description": "Detects the layout of each page: text blocks, figures, tables, headers. The shared interface every layout model implements.",
+            "code": "class BaseLayoutModel(BasePageModel, BaseModelWithOptions, ABC):\n    \"\"\"Shared interface for layout models.\"\"\""
+          },
+          "OCR": {
+            "label": "OCR model",
+            "files": [
+              "docling/models/base_ocr_model.py:24"
+            ],
+            "lang": "python",
+            "description": "Reads text from scanned or image-only regions so even non-digital PDFs become machine-readable.",
+            "code": "class BaseOcrModel(BasePageModel, BaseModelWithOptions):\n    def __init__(\n        self,"
+          },
+          "TAB": {
+            "label": "Table-structure model",
+            "files": [
+              "docling/models/base_table_model.py:13"
+            ],
+            "lang": "python",
+            "description": "Recovers the row and column structure of detected tables, not just their bounding boxes.",
+            "code": "class BaseTableStructureModel(BasePageModel, BaseModelWithOptions, ABC):\n    \"\"\"Shared interface for table structure models.\"\"\""
+          },
+          "ASM": {
+            "label": "Page assembly",
+            "files": [
+              "docling/models/stages/page_assemble/page_assemble_model.py:55"
+            ],
+            "lang": "python",
+            "description": "Combines the per-model outputs for a page into assembled elements.",
+            "code": "class PageAssembleModel(BasePageModel):\n    # Minimum fraction of a cluster's area that a hyperlink rect must cover"
+          },
+          "RDO": {
+            "label": "Reading-order model",
+            "files": [
+              "docling/models/stages/reading_order/readingorder_model.py:42"
+            ],
+            "lang": "python",
+            "description": "Orders the assembled elements into the sequence a human would actually read.",
+            "code": "class ReadingOrderModel:\n    def __init__(self, options: ReadingOrderOptions):"
+          }
+        }
+      }
+    },
+    "RES": {
+      "label": "ConversionResult",
+      "files": [
+        "docling/datamodel/document.py:418"
+      ],
+      "lang": "python",
+      "description": "The assembled output: a ConversionResult that carries the structured DoclingDocument plus status and any errors.",
+      "code": "class ConversionResult(ConversionAssets):\n    input: InputDocument\n    assembled: AssembledUnit = AssembledUnit()"
+    },
+    "EXP": {
+      "label": "Export: Markdown / JSON / HTML",
+      "files": [
+        "docling/datamodel/base_models.py:88"
+      ],
+      "lang": "python",
+      "description": "The DoclingDocument is serialized to one of the supported output formats. OutputFormat enumerates what Docling can emit.",
+      "code": "class OutputFormat(str, Enum):\n    MARKDOWN = \"md\"\n    JSON = \"json\""
+    }
+  }
+};
+
+/* ---- engine: leveled walkthrough with drill-down ---- */
+const $ = (id) => document.getElementById(id);
+const stage = $("stage"), vp = $("vp");
+let scale = 1, tx = 0, ty = 0;
+const apply = () => { vp.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`; };
+
+let stack = [{ label: "Overview", data: { diagramType: DATA.diagramType, mermaid: DATA.mermaid, nodes: DATA.nodes } }];
+const current = () => stack[stack.length - 1];
+
+let lastDims = null;
+function sizeSvg(svg){
+  let w = 0, h = 0;
+  const vb = svg.viewBox && svg.viewBox.baseVal;
+  if (vb && vb.width){ w = vb.width; h = vb.height; }
+  if (!w || !h){ const b = svg.getBoundingClientRect(); w = b.width; h = b.height; }
+  // Pin the SVG to its own coordinate units so 1 unit == 1 px and the
+  // pan/zoom transform stays consistent at every drill level.
+  svg.removeAttribute("width"); svg.removeAttribute("height");
+  svg.style.maxWidth = "none"; svg.style.width = w + "px"; svg.style.height = h + "px";
+  lastDims = { w, h };
+  return lastDims;
+}
+function fit(){
+  const svg = vp.querySelector("svg"); if(!svg) return;
+  const d = lastDims || sizeSvg(svg);
+  const r = stage.getBoundingClientRect();
+  const pad = 64;
+  let s = Math.min((r.width - pad)/d.w, (r.height - pad)/d.h);
+  if (!isFinite(s) || s <= 0) s = 1;
+  s = Math.max(0.25, Math.min(s, 1.9));   // readable when small, contained when large
+  scale = s;
+  tx = (r.width - d.w*scale)/2;
+  ty = (r.height - d.h*scale)/2;
+  apply();
+}
+window.addEventListener("resize", fit);
+function zoomAt(cx, cy, factor){
+  const r = stage.getBoundingClientRect(); const mx = cx - r.left, my = cy - r.top;
+  const ns = Math.min(4, Math.max(0.2, scale*factor));
+  tx = mx - (mx - tx) * (ns/scale); ty = my - (my - ty) * (ns/scale); scale = ns; apply();
+}
+stage.addEventListener("wheel", (e)=>{ e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY*0.0015)); }, {passive:false});
+let dragging=false, sx=0, sy=0;
+stage.addEventListener("pointerdown",(e)=>{ if(e.target.closest(".node")) return; dragging=true; sx=e.clientX-tx; sy=e.clientY-ty; stage.classList.add("grabbing"); });
+stage.addEventListener("pointermove",(e)=>{ if(!dragging) return; tx=e.clientX-sx; ty=e.clientY-sy; apply(); });
+window.addEventListener("pointerup",()=>{ dragging=false; stage.classList.remove("grabbing"); });
+$("zin").onclick = ()=>{ const r=stage.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, 1.2); };
+$("zout").onclick = ()=>{ const r=stage.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, 1/1.2); };
+$("fit").onclick = fit;
+
+function nodeIdFromGroup(el){
+  const nodes = current().data.nodes;
+  const m = (el.id || "").match(/^[a-zA-Z]+-(.+?)-\d+$/);
+  if (m && nodes[m[1]]) return m[1];
+  const txt = (el.textContent || "").trim();
+  for (const id in nodes){ if (nodes[id].label.trim() === txt) return id; }
+  return null;
+}
+function renderBreadcrumb(){
+  const bc = $("crumbs"); bc.innerHTML = "";
+  stack.forEach((lvl, i)=>{
+    const b = document.createElement("button"); b.className="crumb"; b.textContent = lvl.label;
+    b.onclick = ()=>{ if(i < stack.length-1){ stack = stack.slice(0, i+1); renderLevel(); } };
+    bc.appendChild(b);
+    if (i < stack.length-1){ const s=document.createElement("span"); s.className="sep"; s.textContent="›"; bc.appendChild(s); }
+  });
+}
+function buildList(){
+  const nodes = current().data.nodes; const list = $("p-list"); list.innerHTML = "";
+  for (const id in nodes){
+    const b = document.createElement("button"); b.dataset.id = id;
+    b.textContent = nodes[id].label + (nodes[id].subflow ? "  ›" : "");
+    b.onclick = ()=>select(id); list.appendChild(b);
+  }
+}
+function select(id){
+  const nodes = current().data.nodes; const n = nodes[id]; if(!n) return;
+  $("p-kicker").textContent = current().data.diagramType === "erDiagram" ? "Entity" : "Step";
+  $("p-title").textContent = n.label;
+  $("p-desc").textContent = n.description || "";
+  const drill = $("p-drill");
+  if (n.subflow){ drill.style.display="inline-block"; drill.textContent = "Drill into " + n.label + "  ›"; drill.onclick = ()=>drillInto(id); }
+  else drill.style.display = "none";
+  const files = $("p-files"); files.innerHTML = "";
+  (n.files || []).forEach(f => { const s=document.createElement("span"); s.textContent=f; files.appendChild(s); });
+  if (n.code){
+    $("p-snipwrap").style.display = "block";
+    $("p-sniplabel").textContent = (n.files && n.files[0]) ? n.files[0] : "Snippet";
+    const code = $("p-code"); code.textContent = n.code; code.className = "language-" + (n.lang || "text");
+    if (window.hljs){ try{ delete code.dataset.highlighted; hljs.highlightElement(code); }catch(e){} }
+  } else { $("p-snipwrap").style.display = "none"; }
+  document.querySelectorAll(".node.wt-active").forEach(e=>e.classList.remove("wt-active"));
+  document.querySelectorAll(".node").forEach(g=>{ if(nodeIdFromGroup(g)===id) g.classList.add("wt-active"); });
+  document.querySelectorAll(".nodelist button").forEach(b=>b.classList.toggle("active", b.dataset.id===id));
+}
+function drillInto(id){
+  const n = current().data.nodes[id]; if(!n || !n.subflow) return;
+  stack.push({ label: n.label, data: { diagramType: n.subflow.diagramType || "flowchart", mermaid: n.subflow.mermaid, nodes: n.subflow.nodes } });
+  renderLevel();
+}
+async function renderLevel(){
+  renderBreadcrumb(); buildList();
+  if (!window.mermaid){ vp.innerHTML = '<div class="err">Could not load Mermaid from the CDN. On a restricted network, vendor mermaid.min.js locally (see html-patterns.md).</div>'; return; }
+  const lvl = current();
+  try{
+    const { svg } = await mermaid.render("wtg-" + stack.length + "-" + Date.now(), lvl.data.mermaid);
+    vp.innerHTML = svg;
+    const s = vp.querySelector("svg"); if(s) sizeSvg(s);
+    document.querySelectorAll(".node").forEach(g=>{
+      g.style.cursor = "pointer";
+      const id = nodeIdFromGroup(g);
+      if (id && lvl.data.nodes[id] && lvl.data.nodes[id].subflow) g.classList.add("has-sub");
+      g.addEventListener("click",(e)=>{ e.stopPropagation(); const nid=nodeIdFromGroup(g); if(nid) select(nid); });
+      g.addEventListener("dblclick",(e)=>{ e.stopPropagation(); const nid=nodeIdFromGroup(g); if(nid && lvl.data.nodes[nid].subflow) drillInto(nid); });
+    });
+    fit();
+    requestAnimationFrame(fit);
+    const first = Object.keys(lvl.data.nodes)[0]; if(first) select(first);
+  }catch(err){ vp.innerHTML = '<div class="err">Diagram failed to render: ' + (err && err.message ? err.message : err) + '</div>'; }
+}
+function start(){
+  if (window.mermaid){
+    mermaid.initialize({
+      startOnLoad:false, securityLevel:"loose", theme:"base",
+      themeVariables:{ background:"#161616", primaryColor:"#262626", primaryBorderColor:"#0f62fe",
+        primaryTextColor:"#f4f4f4", lineColor:"#6f6f6f", secondaryColor:"#1c2a44", tertiaryColor:"#161616",
+        fontFamily:"IBM Plex Sans, system-ui, sans-serif", fontSize:"15px" }
+    });
+  }
+  renderLevel();
+}
+start();
+</script>
+</body>
+</html>

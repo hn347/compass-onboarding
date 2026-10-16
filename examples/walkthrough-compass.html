@@ -1,0 +1,418 @@
+<!doctype html>
+<!--
+Compass walkthrough (reference instance)
+Indexed-at: <commit-sha>
+Branch: <branch>
+Generated: <ISO timestamp>
+Depth: newcomer
+Inspired by alexanderop/walkthrough and Amp shareable walkthroughs. Original implementation.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Walkthrough: How Compass onboards you</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css" />
+<style>
+  :root{
+    --bg:#161616; --layer:#262626; --layer2:#393939; --border:#393939;
+    --text:#f4f4f4; --text2:#c6c6c6; --muted:#8d8d8d;
+    --blue:#0f62fe; --blue-l:#4589ff; --blue-ll:#78a9ff; --teal:#08bdba;
+    --sans:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+  header{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header .mark{width:10px;height:10px;background:var(--blue);display:inline-block;border-radius:2px}
+  header h1{font-size:16px;font-weight:600;margin:0;letter-spacing:.01em}
+  header .sub{color:var(--muted);font-size:13px}
+  .layout{display:grid;grid-template-columns:1fr 420px;height:calc(100% - 59px)}
+  @media (max-width:900px){.layout{grid-template-columns:1fr;grid-template-rows:55% 45%}}
+  #stage{position:relative;overflow:hidden;background:
+    radial-gradient(circle at 1px 1px, #2a2a2a 1px, transparent 0) 0 0/22px 22px, var(--bg);cursor:grab}
+  #stage.grabbing{cursor:grabbing}
+  #vp{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+  #vp svg{max-width:none!important;height:auto}
+  #crumbs{position:absolute;top:12px;left:14px;z-index:6;display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+    background:rgba(22,22,22,.78);backdrop-filter:blur(4px);padding:6px 10px;border:1px solid var(--border);border-radius:6px}
+  .crumb{background:transparent;border:none;color:var(--blue-ll);font-family:var(--mono);font-size:12px;cursor:pointer;padding:0}
+  .crumb:last-child{color:var(--text2);cursor:default}
+  .sep{color:var(--muted);font-family:var(--mono)}
+  .controls{position:absolute;right:14px;bottom:14px;display:flex;gap:6px;z-index:5}
+  .controls button{width:34px;height:34px;border:1px solid var(--border);background:var(--layer);
+    color:var(--text);font-size:16px;border-radius:4px;cursor:pointer;font-family:var(--mono)}
+  .controls button:hover{background:var(--layer2);border-color:var(--blue-l)}
+  .node{cursor:pointer}
+  .node.has-sub rect,.node.has-sub polygon,.node.has-sub path,.node.has-sub circle{
+    stroke:var(--teal)!important;stroke-width:2.5px!important}
+  .node.wt-active rect,.node.wt-active polygon,.node.wt-active circle,.node.wt-active path{
+    stroke:var(--blue-ll)!important;stroke-width:3px!important;filter:drop-shadow(0 0 6px rgba(120,169,255,.55))}
+  aside{border-left:1px solid var(--border);background:var(--layer);overflow-y:auto;padding:0}
+  @media (max-width:900px){aside{border-left:none;border-top:1px solid var(--border)}}
+  .panel-head{padding:20px 22px 14px;border-bottom:1px solid var(--border)}
+  .panel-head .kicker{color:var(--blue-l);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono)}
+  .panel-head h2{margin:6px 0 0;font-size:19px;font-weight:600}
+  .panel-body{padding:18px 22px 40px}
+  .desc{color:var(--text2);font-size:14px;line-height:1.6;margin:0 0 18px}
+  #p-drill{display:none;margin:0 0 18px;background:var(--blue);border:none;color:#fff;font-family:var(--sans);
+    font-size:13px;font-weight:500;padding:8px 14px;border-radius:4px;cursor:pointer}
+  #p-drill:hover{background:var(--blue-l)}
+  .files{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px}
+  .files span{font-family:var(--mono);font-size:12px;color:var(--blue-ll);background:#1c2a44;
+    border:1px solid #24355a;padding:3px 8px;border-radius:3px}
+  .snip-label{font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 6px}
+  pre{margin:0;border:1px solid var(--border);border-radius:6px;overflow:auto;background:#0e0e0e}
+  pre code{font-family:var(--mono);font-size:12.5px;line-height:1.55;padding:14px;display:block}
+  .nodelist{padding:14px 22px 24px;border-top:1px solid var(--border)}
+  .nodelist .t{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono);margin-bottom:8px}
+  .nodelist button{display:block;width:100%;text-align:left;background:transparent;border:none;color:var(--text2);
+    padding:7px 10px;border-radius:4px;cursor:pointer;font-family:var(--sans);font-size:13px}
+  .nodelist button:hover{background:var(--layer2);color:var(--text)}
+  .nodelist button.active{background:#1c2a44;color:var(--blue-ll)}
+  .err{padding:24px;color:#ffb3b3;font-family:var(--mono);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <span class="mark"></span>
+  <h1>How Compass onboards you to a repository</h1>
+  <span class="sub">Click a node to read it. Teal boxes drill into a sub-diagram. Scroll to zoom, drag to pan.</span>
+</header>
+<div class="layout">
+  <div id="stage">
+    <div id="crumbs"></div>
+    <div id="vp"></div>
+    <div class="controls">
+      <button id="zin" title="Zoom in">+</button>
+      <button id="zout" title="Zoom out">&minus;</button>
+      <button id="fit" title="Fit to view">&#9633;</button>
+    </div>
+  </div>
+  <aside>
+    <div class="panel-head">
+      <div class="kicker" id="p-kicker">Walkthrough</div>
+      <h2 id="p-title">Select a node</h2>
+    </div>
+    <div class="panel-body">
+      <p class="desc" id="p-desc">Click any node in the diagram, or pick one from the list below. Boxes outlined in teal contain a subflow: click "Drill into" to open a deeper diagram of just that piece.</p>
+      <button id="p-drill"></button>
+      <div class="files" id="p-files"></div>
+      <div id="p-snipwrap" style="display:none">
+        <div class="snip-label" id="p-sniplabel">Snippet</div>
+        <pre><code id="p-code"></code></pre>
+      </div>
+    </div>
+    <div class="nodelist">
+      <div class="t">Concepts at this level</div>
+      <div id="p-list"></div>
+    </div>
+  </aside>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>
+/* ---- DATA: the only part the agent fills in. A node may carry a `subflow`
+        (its own mermaid + nodes) to add an abstraction layer you drill into. ---- */
+const DATA = {
+  topic: "How Compass onboards you to a repository",
+  diagramType: "flowchart",
+  mermaid: `flowchart TD
+    CMD["/onboard"] --> COORD["Onboarding coordinator"]
+    COORD --> RECON["Reconnaissance"]
+    RECON --> EXPLORER["repo-explorer (read-only)"]
+    EXPLORER --> SUMM["Area summaries on disk"]
+    SUMM --> PACKET["onboarding-packet"]
+    PACKET --> WALK["walkthrough HTML"]
+    COORD -. "delegates one slice at a time" .-> EXPLORER
+  `,
+  nodes: {
+    CMD: {
+      label: "/onboard",
+      files: [".bob/commands/onboard.md:1"],
+      lang: "markdown",
+      description: "The entry point. You run /onboard with an optional focus area and a depth flag (newcomer by default, or expert). No focus is valid and means a whole-repo orientation, because a newcomer cannot name a module they have not seen yet.",
+      code: "---\ndescription: Onboard me to this repo and produce the grounded onboarding packet\nargument-hint: \"[focus-area] [--depth newcomer|expert]\"\nallowed-tools: Read, Grep, Glob, Bash(git:*)\n---"
+    },
+    COORD: {
+      label: "Onboarding coordinator",
+      files: [".bob/custom_modes.yaml:2", "AGENTS.md:1"],
+      lang: "yaml",
+      description: "A custom mode that plans the index and delegates. It never reads the whole codebase and never edits source: its writes are scoped to markdown and html under docs/onboarding/. It holds only a small running map while the heavy reading happens elsewhere.",
+      code: "- slug: onboarding\n  name: Onboarding\n  groups:\n    - read\n    - command\n  allowedEditPatterns:\n    - (^|/)(docs/onboarding/.*\\.(md|html)|AGENTS\\.md)$"
+    },
+    RECON: {
+      label: "Reconnaissance",
+      files: [".bob/skills/repo-cartographer/SKILL.md:21"],
+      lang: "markdown",
+      description: "Phase one. Gather cheap signals with Glob and Grep instead of reading every file: the directory tree, package manifests, framework fingerprints, entry points, and the test layout. Read a file in full only when a signal is ambiguous.",
+      code: "1. Reconnaissance (cheap, no full reads). Use Glob and Grep, not Read on\n   every file. Gather: the directory tree, manifests, framework\n   fingerprints, entry points, the test layout, and config files."
+    },
+    EXPLORER: {
+      label: "repo-explorer",
+      files: [".bob/custom_modes.yaml:30", ".bob/rules/10-context-hygiene.md:1"],
+      lang: "yaml",
+      description: "A read-only worker mode. Handed one area, it reads only that slice and returns a single grounded summary. It cannot edit anything and never reads outside its area, so the heavy reading stays isolated. Drill in to see the steps it runs per slice.",
+      code: "- slug: repo-explorer\n  name: Repo Explorer\n  groups:\n    - read",
+      subflow: {
+        diagramType: "flowchart",
+        mermaid: `flowchart TD
+          E1["Receive area assignment"] --> E2["Glob + Grep the slice"]
+          E2 --> E3{"Signal clear?"}
+          E3 -- yes --> E5["Summarize from signals"]
+          E3 -- no --> E4["Read the ambiguous file"]
+          E4 --> E5
+          E5 --> E6["Write summary to disk"]
+          E6 --> E7["Return summary"]
+          E5 -. "domain term?" .-> E8["Flag for glossary"]
+        `,
+        nodes: {
+          E1: { label:"Receive area assignment", files:[".bob/custom_modes.yaml:38"], lang:"yaml",
+            description:"The coordinator delegates one area (a module, directory, or concern). The explorer is scoped to that area only.",
+            code:"whenToUse: |\n  Use when the onboarding coordinator delegates exploration of a single\n  module, directory, or concern and needs a compact, grounded summary back." },
+          E2: { label:"Glob + Grep the slice", files:[".bob/rules/10-context-hygiene.md:6"], lang:"markdown",
+            description:"Gather signals across the slice without reading every file: tree, manifests, fingerprints, entry points.",
+            code:"Use Glob and Grep to gather signals (directory tree, manifests,\nframework fingerprints, entry points, test layout)." },
+          E3: { label:"Signal clear?", files:[".bob/skills/repo-cartographer/SKILL.md:24"], lang:"markdown",
+            description:"A decision, and the reason reading stays minimal. If the signals are unambiguous, summarize straight from them. Only when a signal is ambiguous does the explorer open the actual file.",
+            code:"Read a file in full only when a signal is ambiguous." },
+          E4: { label:"Read the ambiguous file", files:[".bob/rules/00-grounding.md:7"], lang:"markdown",
+            description:"The only branch that opens a full file. Quote at most two lines; never paste large file contents into context.",
+            code:"Quote at most two lines when illustrating. Never paste large file\ncontents." },
+          E5: { label:"Summarize from signals", files:[".bob/skills/repo-cartographer/references/area-summary.template.md:1"], lang:"markdown",
+            description:"Both branches meet here: produce one short structured summary of the area, grounded in file references.",
+            code:"# Area summary: <area name>\n**Responsibility.** <one or two sentences>\n**Key files.** `<path:line>` ..." },
+          E6: { label:"Write summary to disk", files:[".bob/rules/10-context-hygiene.md:9"], lang:"markdown",
+            description:"Persist the summary, then drop the slice detail from context before the next area. This is what keeps the window small.",
+            code:"Persist each area summary to disk immediately, then drop that area's\ndetail from the working context before starting the next area." },
+          E7: { label:"Return summary", files:[".bob/custom_modes.yaml:31"], lang:"yaml",
+            description:"Hand back one concise summary with file:line references and excerpts of at most two lines. No raw file dumps.",
+            code:"Your summary uses file:line references and excerpts of at most two\nlines. You never paste large file contents." },
+          E8: { label:"Flag for glossary", files:[".bob/skills/glossary-builder/SKILL.md:1"], lang:"markdown",
+            description:"A side flow, not the main path: when the explorer spots a domain term or acronym, it notes it so glossary-builder can ground it later.",
+            code:"Harvest candidate terms from where domain language actually lives:\nREADME and docs, module and package names, code comments, config keys." }
+        }
+      }
+    },
+    SUMM: {
+      label: "Area summaries on disk",
+      files: [".bob/skills/repo-cartographer/references/area-summary.template.md:1"],
+      lang: "markdown",
+      description: "Each explored area becomes a short summary written to disk: responsibility, key files, entry points, one-hop dependencies, gotchas, and any UNKNOWNs. Persisting and then dropping the slice detail is what keeps the main context small on a large repo.",
+      code: "# Area summary: <area name>\n**Responsibility.** <one or two sentences>\n**Key files.** `<path:line>` ...\n**Unknowns.** UNKNOWN: <...>. To confirm: <...>"
+    },
+    PACKET: {
+      label: "onboarding-packet",
+      files: [".bob/skills/onboarding-packet/SKILL.md:1"],
+      lang: "markdown",
+      description: "Assembles the durable packet from the summaries and the visual walkthrough. Each artifact is stamped with the commit it was built from. Drill in to see the six outputs it produces.",
+      code: "Generate each artifact from its template in references/.\nEvery claim grounded in file:line; every gap an explicit UNKNOWN.\nStamp provenance: commit, branch, timestamp, depth.",
+      subflow: {
+        diagramType: "flowchart",
+        mermaid: `flowchart TD
+          P0["Collect area summaries"] --> P1["START-HERE.md"]
+          P0 --> P2["ARCHITECTURE.md"]
+          P0 --> P3["MODULE-MAP.md"]
+          P0 --> P4["GLOSSARY.md"]
+          P0 --> P5["RUNBOOK.md"]
+          P0 --> P6["walkthrough-overview.html"]
+        `,
+        nodes: {
+          P0: { label:"Collect area summaries", files:[".bob/skills/onboarding-packet/SKILL.md:18"], lang:"markdown",
+            description:"Read the persisted area summaries and the requested depth, then write each artifact from its template.",
+            code:"Inputs: the area summaries on disk, the requested depth,\nan optional focus, and the commit/branch/time for provenance." },
+          P1: { label:"START-HERE.md", files:[".bob/skills/onboarding-packet/references/start-here.template.md:1"], lang:"markdown",
+            description:"The reading path: what the system is, a single end-to-end trace, and a where-to-look table.",
+            code:"# Start here\n## Your reading path\n## One end-to-end path\n## Where to look" },
+          P2: { label:"ARCHITECTURE.md", files:[".bob/skills/onboarding-packet/references/architecture.template.md:1"], lang:"markdown",
+            description:"The system at altitude: shape, major areas, how data flows, external dependencies, risk.",
+            code:"# Architecture\n**Shape.** ...\n**Major areas.** ...\n**How data flows.** ..." },
+          P3: { label:"MODULE-MAP.md", files:[".bob/skills/onboarding-packet/references/module-map.template.md:1"], lang:"markdown",
+            description:"One block per area, plus the Indexed-at commit that anchors /reindex and staleness checks.",
+            code:"# Module map\n## <area name>\n- **Responsibility.** ...\n- _Map age:_ generated at <commit-sha>" },
+          P4: { label:"GLOSSARY.md", files:[".bob/skills/glossary-builder/SKILL.md:1"], lang:"markdown",
+            description:"Domain terms and acronyms, each grounded in where it appears, with a confidence marker.",
+            code:"| Term | Meaning | Seen in | Confidence |\n|---|---|---|---|" },
+          P5: { label:"RUNBOOK.md", files:[".bob/skills/onboarding-packet/references/runbook.template.md:1"], lang:"markdown",
+            description:"How to build, run, and test, every step grounded in a script or config file, unknowns flagged.",
+            code:"# Runbook\n**Install.**\n**Run locally.**\n**Test.**" },
+          P6: { label:"walkthrough-overview.html", files:[".bob/skills/walkthrough/SKILL.md:1"], lang:"markdown",
+            description:"The visual entry point you are looking at, generated from the same grounded nodes. Drill in once more to see how it is built.",
+            code:"Produce one self-contained walkthrough-{topic}.html.\nFive to twelve grounded nodes. A map, not a code reference.",
+            subflow: {
+              diagramType: "flowchart",
+              mermaid: `flowchart TD
+                W1["Scope the topic"] --> W2["Pick diagram type"]
+                W2 --> W3["Explore slices (repo-explorer)"]
+                W3 --> W4["Synthesize 5-12 grounded nodes"]
+                W4 --> W5["Generate self-contained HTML"]
+              `,
+              nodes: {
+                W1: { label:"Scope the topic", files:[".bob/skills/walkthrough/SKILL.md:20"], lang:"markdown",
+                  description:"Decide what to explain: a feature, a flow, the architecture, or a schema.",
+                  code:"1. Scope. Decide what to explain and pick the diagram type." },
+                W2: { label:"Pick diagram type", files:[".bob/skills/walkthrough/SKILL.md:22"], lang:"markdown",
+                  description:"A flowchart for control or data flow, an ER diagram for a database schema.",
+                  code:"a flowchart for control or data flow, an erDiagram for a schema." },
+                W3: { label:"Explore slices", files:[".bob/skills/walkthrough/SKILL.md:24"], lang:"markdown",
+                  description:"Gather the relevant slices via the read-only repo-explorer, reusing existing area summaries. Do not re-read the whole repo.",
+                  code:"Reuse area summaries that already exist; do not re-read the whole repo." },
+                W4: { label:"Synthesize nodes", files:[".bob/skills/walkthrough/SKILL.md:27"], lang:"markdown",
+                  description:"Reduce to 5-12 concept nodes, each grounded in a real file:line, each with a short snippet. Attach a subflow to any node worth opening.",
+                  code:"Reduce to five to twelve concept nodes and their connections.\nFewer is better; this is a map, not an inventory." },
+                W5: { label:"Generate HTML", files:[".bob/skills/walkthrough/references/html-patterns.md:1"], lang:"markdown",
+                  description:"Fill the DATA object and write one self-contained file following html-patterns.md.",
+                  code:"Fill the DATA object with the topic, the Mermaid diagram string,\nand the per-node details. Write one self-contained HTML file." }
+              }
+            } }
+        }
+      }
+    },
+    WALK: {
+      label: "walkthrough HTML",
+      files: [".bob/skills/walkthrough/references/html-patterns.md:1"],
+      lang: "markdown",
+      description: "The self-contained clickable map. Grounded node data, file references, and snippets are rendered as a diagram you can drill through, so a newcomer gets a mental model in under two minutes.",
+      code: "One file, docs/onboarding/walkthrough-{topic}.html.\nClickable Mermaid diagram + detail panel + drill-down + pan/zoom."
+    }
+  }
+};
+
+/* ---- engine: leveled walkthrough with drill-down ---- */
+const $ = (id) => document.getElementById(id);
+const stage = $("stage"), vp = $("vp");
+let scale = 1, tx = 0, ty = 0;
+const apply = () => { vp.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`; };
+
+let stack = [{ label: "Overview", data: { diagramType: DATA.diagramType, mermaid: DATA.mermaid, nodes: DATA.nodes } }];
+const current = () => stack[stack.length - 1];
+
+let lastDims = null;
+function sizeSvg(svg){
+  let w = 0, h = 0;
+  const vb = svg.viewBox && svg.viewBox.baseVal;
+  if (vb && vb.width){ w = vb.width; h = vb.height; }
+  if (!w || !h){ const b = svg.getBoundingClientRect(); w = b.width; h = b.height; }
+  // Pin the SVG to its own coordinate units so 1 unit == 1 px and the
+  // pan/zoom transform stays consistent at every drill level.
+  svg.removeAttribute("width"); svg.removeAttribute("height");
+  svg.style.maxWidth = "none"; svg.style.width = w + "px"; svg.style.height = h + "px";
+  lastDims = { w, h };
+  return lastDims;
+}
+function fit(){
+  const svg = vp.querySelector("svg"); if(!svg) return;
+  const d = lastDims || sizeSvg(svg);
+  const r = stage.getBoundingClientRect();
+  const pad = 64;
+  let s = Math.min((r.width - pad)/d.w, (r.height - pad)/d.h);
+  if (!isFinite(s) || s <= 0) s = 1;
+  s = Math.max(0.25, Math.min(s, 1.9));   // readable when small, contained when large
+  scale = s;
+  tx = (r.width - d.w*scale)/2;
+  ty = (r.height - d.h*scale)/2;
+  apply();
+}
+window.addEventListener("resize", fit);
+function zoomAt(cx, cy, factor){
+  const r = stage.getBoundingClientRect(); const mx = cx - r.left, my = cy - r.top;
+  const ns = Math.min(4, Math.max(0.2, scale*factor));
+  tx = mx - (mx - tx) * (ns/scale); ty = my - (my - ty) * (ns/scale); scale = ns; apply();
+}
+stage.addEventListener("wheel", (e)=>{ e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY*0.0015)); }, {passive:false});
+let dragging=false, sx=0, sy=0;
+stage.addEventListener("pointerdown",(e)=>{ if(e.target.closest(".node")) return; dragging=true; sx=e.clientX-tx; sy=e.clientY-ty; stage.classList.add("grabbing"); });
+stage.addEventListener("pointermove",(e)=>{ if(!dragging) return; tx=e.clientX-sx; ty=e.clientY-sy; apply(); });
+window.addEventListener("pointerup",()=>{ dragging=false; stage.classList.remove("grabbing"); });
+$("zin").onclick = ()=>{ const r=stage.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, 1.2); };
+$("zout").onclick = ()=>{ const r=stage.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, 1/1.2); };
+$("fit").onclick = fit;
+
+function nodeIdFromGroup(el){
+  const nodes = current().data.nodes;
+  const m = (el.id || "").match(/^[a-zA-Z]+-(.+?)-\d+$/);
+  if (m && nodes[m[1]]) return m[1];
+  const txt = (el.textContent || "").trim();
+  for (const id in nodes){ if (nodes[id].label.trim() === txt) return id; }
+  return null;
+}
+function renderBreadcrumb(){
+  const bc = $("crumbs"); bc.innerHTML = "";
+  stack.forEach((lvl, i)=>{
+    const b = document.createElement("button"); b.className="crumb"; b.textContent = lvl.label;
+    b.onclick = ()=>{ if(i < stack.length-1){ stack = stack.slice(0, i+1); renderLevel(); } };
+    bc.appendChild(b);
+    if (i < stack.length-1){ const s=document.createElement("span"); s.className="sep"; s.textContent="›"; bc.appendChild(s); }
+  });
+}
+function buildList(){
+  const nodes = current().data.nodes; const list = $("p-list"); list.innerHTML = "";
+  for (const id in nodes){
+    const b = document.createElement("button"); b.dataset.id = id;
+    b.textContent = nodes[id].label + (nodes[id].subflow ? "  ›" : "");
+    b.onclick = ()=>select(id); list.appendChild(b);
+  }
+}
+function select(id){
+  const nodes = current().data.nodes; const n = nodes[id]; if(!n) return;
+  $("p-kicker").textContent = current().data.diagramType === "erDiagram" ? "Entity" : "Step";
+  $("p-title").textContent = n.label;
+  $("p-desc").textContent = n.description || "";
+  const drill = $("p-drill");
+  if (n.subflow){ drill.style.display="inline-block"; drill.textContent = "Drill into " + n.label + "  ›"; drill.onclick = ()=>drillInto(id); }
+  else drill.style.display = "none";
+  const files = $("p-files"); files.innerHTML = "";
+  (n.files || []).forEach(f => { const s=document.createElement("span"); s.textContent=f; files.appendChild(s); });
+  if (n.code){
+    $("p-snipwrap").style.display = "block";
+    $("p-sniplabel").textContent = (n.files && n.files[0]) ? n.files[0] : "Snippet";
+    const code = $("p-code"); code.textContent = n.code; code.className = "language-" + (n.lang || "text");
+    if (window.hljs){ try{ delete code.dataset.highlighted; hljs.highlightElement(code); }catch(e){} }
+  } else { $("p-snipwrap").style.display = "none"; }
+  document.querySelectorAll(".node.wt-active").forEach(e=>e.classList.remove("wt-active"));
+  document.querySelectorAll(".node").forEach(g=>{ if(nodeIdFromGroup(g)===id) g.classList.add("wt-active"); });
+  document.querySelectorAll(".nodelist button").forEach(b=>b.classList.toggle("active", b.dataset.id===id));
+}
+function drillInto(id){
+  const n = current().data.nodes[id]; if(!n || !n.subflow) return;
+  stack.push({ label: n.label, data: { diagramType: n.subflow.diagramType || "flowchart", mermaid: n.subflow.mermaid, nodes: n.subflow.nodes } });
+  renderLevel();
+}
+async function renderLevel(){
+  renderBreadcrumb(); buildList();
+  if (!window.mermaid){ vp.innerHTML = '<div class="err">Could not load Mermaid from the CDN. On a restricted network, vendor mermaid.min.js locally (see html-patterns.md).</div>'; return; }
+  const lvl = current();
+  try{
+    const { svg } = await mermaid.render("wtg-" + stack.length + "-" + Date.now(), lvl.data.mermaid);
+    vp.innerHTML = svg;
+    const s = vp.querySelector("svg"); if(s) sizeSvg(s);
+    document.querySelectorAll(".node").forEach(g=>{
+      g.style.cursor = "pointer";
+      const id = nodeIdFromGroup(g);
+      if (id && lvl.data.nodes[id] && lvl.data.nodes[id].subflow) g.classList.add("has-sub");
+      g.addEventListener("click",(e)=>{ e.stopPropagation(); const nid=nodeIdFromGroup(g); if(nid) select(nid); });
+      g.addEventListener("dblclick",(e)=>{ e.stopPropagation(); const nid=nodeIdFromGroup(g); if(nid && lvl.data.nodes[nid].subflow) drillInto(nid); });
+    });
+    fit();
+    requestAnimationFrame(fit);
+    const first = Object.keys(lvl.data.nodes)[0]; if(first) select(first);
+  }catch(err){ vp.innerHTML = '<div class="err">Diagram failed to render: ' + (err && err.message ? err.message : err) + '</div>'; }
+}
+function start(){
+  if (window.mermaid){
+    mermaid.initialize({
+      startOnLoad:false, securityLevel:"loose", theme:"base",
+      themeVariables:{ background:"#161616", primaryColor:"#262626", primaryBorderColor:"#0f62fe",
+        primaryTextColor:"#f4f4f4", lineColor:"#6f6f6f", secondaryColor:"#1c2a44", tertiaryColor:"#161616",
+        fontFamily:"IBM Plex Sans, system-ui, sans-serif", fontSize:"15px" }
+    });
+  }
+  renderLevel();
+}
+start();
+</script>
+</body>
+</html>

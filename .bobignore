@@ -1,0 +1,40 @@
+# Compass: keep build artifacts, vendored code, large assets, and secrets out of onboarding.
+# Uses .gitignore syntax.
+
+# Dependencies and vendored code
+node_modules/
+vendor/
+.venv/
+venv/
+__pycache__/
+
+# Build and generated output
+dist/
+build/
+out/
+target/
+*.min.js
+*.bundle.js
+coverage/
+
+# Large assets and binaries
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.pdf
+*.zip
+*.tar
+*.gz
+*.mp4
+*.lock
+
+# Secrets and local config (never index)
+.env
+.env.*
+*.pem
+*.key
+secrets/
+
+# Compass's own output is not source to explore
+docs/onboarding/

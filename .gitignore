@@ -1,0 +1,17 @@
+# Local files and credentials
+.DS_Store
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.bob/mcp.json
+
+# Python caches and environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Dependencies
+node_modules/
