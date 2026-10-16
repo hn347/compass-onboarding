@@ -4,7 +4,7 @@
 
 Compass helps new contributors find the right starting point and returning contributors understand what changed. A coordinator explores the repository in focused slices, persists concise summaries, and assembles documentation with references back to the source.
 
-Built for **HelloPOK Hackathon 2026** by **team-zbringup**.
+Built for **HelloPOK Hackathon 2026** by Helen Ni and Rory Subarksy.
 
 ## At a glance
 
@@ -119,7 +119,3 @@ Compass is a hackathon prototype. Its generated guides need human review, and th
 - The current refresh command compares committed revisions; uncommitted edits are not a reliable refresh trigger.
 - Example citations are illustrative and may be stale. Validate them against the matching source checkout, especially for the external Docling example.
 - The first onboarding run explores the repository; later refreshes require a previous provenance stamp. Context isolation is the main benefit, rather than parallel execution speed.
-
-## Development context
-
-The original project was designed with IBM Bob in Plan mode and authored in Advanced mode. Bob helped seed the onboarding contract, refine the skills and rules, and test component wiring. Team attribution is preserved from the original submission.
